@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model classes {
+  id                                        Int     @id @default(autoincrement())
+  class                                     String  @db.VarChar(255)
+  tense                                     String  @db.VarChar(255)
+  ind__n                                    String  @map("ind_én") @db.VarChar(255)
+  ind_te                                    String  @db.VarChar(255)
+  ind_mi                                    String  @db.VarChar(255)
+  ind____n                                  String  @map("ind_ő_Ön") @db.VarChar(255)
+  ind__k__n_k                               String  @map("ind_ők_Önök") @db.VarChar(255)
+  ind_ti                                    String  @db.VarChar(255)
+  dir__n                                    String  @map("dir_én") @db.VarChar(255)
+  dir_te                                    String  @db.VarChar(255)
+  dir_mi                                    String  @db.VarChar(255)
+  dir____n                                  String  @map("dir_ő_Ön") @db.VarChar(255)
+  dir__k__n_k                               String  @map("dir_ők_Önök") @db.VarChar(255)
+  dir_ti                                    String  @db.VarChar(255)
+  words_words_past_class_idToclasses        words[] @relation("words_past_class_idToclasses")
+  words_words_present_class_idToclasses     words[] @relation("words_present_class_idToclasses")
+  words_words_subjunctive_class_idToclasses words[] @relation("words_subjunctive_class_idToclasses")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model connections {
+  root_id Int?
+  word_id Int?
+  roots   roots? @relation(fields: [root_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  words   words? @relation(fields: [word_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@ignore
+}
+
+model occurrences {
+  id        Int       @id(map: "ocurrences_pkey") @default(autoincrement())
+  word_id   Int?
+  last_seen DateTime? @db.Timestamp(6)
+  outcome   Int?
+  words     words?    @relation(fields: [word_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "ocurrences_word_id_fkey")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model occurrences2 {
+  id        Int?
+  word_id   Int?
+  last_seen DateTime? @db.Timestamp(6)
+
+  @@ignore
+}
+
+model roots {
+  id          Int           @id @default(autoincrement())
+  root        String        @db.VarChar(255)
+  eng         String?       @db.VarChar(255)
+  notes       String?       @db.VarChar
+  difficulty  Int?
+  connections connections[] @ignore
+}
+
+model words {
+  id                                          Int           @id @default(autoincrement())
+  word                                        String        @db.VarChar(255)
+  eng                                         String        @db.VarChar(255)
+  pos                                         String        @db.VarChar(255)
+  present_class_id                            Int?
+  past_class_id                               Int?
+  subjunctive_class_id                        Int?
+  original_compound                           String?       @db.VarChar(255)
+  connections                                 connections[] @ignore
+  occurrences                                 occurrences[]
+  classes_words_past_class_idToclasses        classes?      @relation("words_past_class_idToclasses", fields: [past_class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  classes_words_present_class_idToclasses     classes?      @relation("words_present_class_idToclasses", fields: [present_class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  classes_words_subjunctive_class_idToclasses classes?      @relation("words_subjunctive_class_idToclasses", fields: [subjunctive_class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
