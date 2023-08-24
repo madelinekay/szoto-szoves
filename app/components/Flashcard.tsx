@@ -5,7 +5,6 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
 const Flashcard: FC<{ word: any }> = ({ word }) => {
   const [flipped, setFlipped] = useState(false);
-  // const [current, setCurrent] = useState(0);
 
   const hungarian = word.word;
   const english = word.eng;

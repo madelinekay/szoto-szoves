@@ -11,6 +11,40 @@ export const loadWord = async () => {
   return word;
 };
 
+export const sampleWord = async () => {
+  const result = await db.$queryRaw`
+  with latest_asks as (
+    select
+      id,
+      word_id,
+      last_seen,
+      now() - last_seen as time_ago
+    from
+      occurrences
+  ),
+  result as (
+    select
+      w.*,
+      extract(
+      epoch 
+      from 
+        (
+          date_trunc('day', la.time_ago)
+        )/ 86400
+    ):: int as days_ago 
+    from
+      words w
+      left join latest_asks la on w.id = la.word_id
+  )
+  select
+    *,
+    weight_from_days_ago(days_ago) as weight
+  from
+    result;
+`;
+  return result;
+};
+
 export const logOccurrence = async (wordId: number) => {
   const occurrence = await db.occurrences.create({
     data: {
@@ -19,34 +53,3 @@ export const logOccurrence = async (wordId: number) => {
     },
   });
 };
-
-// const result = await prisma.$queryRaw`
-//   with latest_asks as (
-//     select
-//       id,
-//       question_id,
-//       last_seen,
-//       now() - date_seen as time_ago
-//     from
-//       occurrences
-//   ),
-//   result as (
-//     select
-//       w.*,
-//       extract(
-//         epoch
-//         from
-//           (
-//             date_trunc('day', la.last_seen)
-//           )
-//       ):: int as milliseconds_ago
-//     from
-//       words
-//       left join latest_asks la on w.id = la.word_id
-//   )
-//   select
-//     *,
-//     weight_from_days_ago(days_ago) as weight
-//   from
-//     result;
-// `;
