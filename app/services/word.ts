@@ -11,16 +11,22 @@ export const loadWord = async () => {
   return word;
 };
 
+// assumes that weight_by_days_ago is defined:
+// create or replace function weight_from_days_ago (days_ago int) returns int as $$
+// begin
+//   return (select 5 * coalesce(days_ago, 10));
+// end;
+// $$ language plpgsql;
+//figure out what's happening with words seen most recently
 export const sampleWord = async () => {
   const result = await db.$queryRaw`
   with latest_asks as (
     select
-      id,
       word_id,
-      last_seen,
-      now() - last_seen as time_ago
+      max(last_seen) as last_seen
     from
       occurrences
+    group by word_id
   ),
   result as (
     select
@@ -29,7 +35,7 @@ export const sampleWord = async () => {
       epoch 
       from 
         (
-          date_trunc('day', la.time_ago)
+          date_trunc('day', now() - la.last_seen)
         )/ 86400
     ):: int as days_ago 
     from
@@ -44,7 +50,7 @@ export const sampleWord = async () => {
 `;
   return result;
 };
-
+//need to overwrite
 export const logOccurrence = async (wordId: number) => {
   const occurrence = await db.occurrences.create({
     data: {
@@ -52,4 +58,11 @@ export const logOccurrence = async (wordId: number) => {
       last_seen: new Date(),
     },
   });
+
+  // const occurrence = await db.$queryRaw`
+  // INSERT INTO occurrences (word_id, last_seen)
+  // VALUES (wordId, new Date())
+  // ON CONFLICT (word_id) DO UPDATE
+  //     SET last_seen = new Date();
+  // `;
 };
