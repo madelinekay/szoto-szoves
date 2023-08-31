@@ -14,7 +14,8 @@ export const loadWord = async () => {
 // assumes that weight_by_days_ago is defined:
 // create or replace function weight_from_days_ago (days_ago int) returns int as $$
 // begin
-//   return (select 5 * coalesce(days_ago, 10));
+//   return (select 5 * coalesce(days_ago, 10) * (5 - abs(difficulty - user_level)));
+
 // end;
 // $$ language plpgsql;
 //figure out what's happening with words seen most recently
@@ -44,7 +45,7 @@ export const sampleWord = async () => {
   )
   select
     *,
-    weight_from_days_ago(days_ago) as weight
+    weight_from_days_ago(days_ago, difficulty, 1) as weight
   from
     result;
 `;
