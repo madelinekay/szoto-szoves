@@ -73,6 +73,7 @@ model words {
   past_class_id                               Int?
   subjunctive_class_id                        Int?
   original_compound                           String?       @db.VarChar(255)
+  difficulty                                  Int?
   connections                                 connections[] @ignore
   occurrences                                 occurrences[]
   classes_words_past_class_idToclasses        classes?      @relation("words_past_class_idToclasses", fields: [past_class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
