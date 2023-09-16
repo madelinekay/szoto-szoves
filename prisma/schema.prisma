@@ -35,13 +35,14 @@ model connections {
   roots   roots? @relation(fields: [root_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   words   words? @relation(fields: [word_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  @@unique([root_id, word_id])
   @@ignore
 }
 
 model occurrences {
   id        Int       @id(map: "ocurrences_pkey") @default(autoincrement())
   word_id   Int?
-  last_seen DateTime? @db.Timestamptz(6)
+  last_seen DateTime? @db.Timestamp(6)
   outcome   Int?
   words     words?    @relation(fields: [word_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "ocurrences_word_id_fkey")
 }
@@ -75,7 +76,7 @@ model words {
   original_compound                           String?       @db.VarChar(255)
   difficulty                                  Int?
   connections                                 connections[] @ignore
-  occurrences                                 occurrences[]
+  occurrences                                 occurrences[] @ignore
   classes_words_past_class_idToclasses        classes?      @relation("words_past_class_idToclasses", fields: [past_class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   classes_words_present_class_idToclasses     classes?      @relation("words_present_class_idToclasses", fields: [present_class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   classes_words_subjunctive_class_idToclasses classes?      @relation("words_subjunctive_class_idToclasses", fields: [subjunctive_class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
