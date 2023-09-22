@@ -8,7 +8,6 @@ export const loadWord = async () => {
     skip: Math.floor(Math.random() * numWords),
   });
   const occurrences = await db.occurrences.findMany();
-  console.log("occurrences", occurrences);
   return word;
 };
 

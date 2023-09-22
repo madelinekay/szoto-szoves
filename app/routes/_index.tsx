@@ -3,38 +3,70 @@ import type { ActionArgs, V2_MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
-import { useState } from "react";
 
 import Flashcard from "~/components/Flashcard";
-import { loadWord, sampleWord, logOccurrence } from "~/services/word";
+import { loadWord, logOccurrence } from "~/services/word";
+import { getSession, commitSession } from "../sessions";
+import { debugFormData } from "~/utils/debug";
 
 export const meta: V2_MetaFunction = () => {
   return [{ title: "Hungarian flashcards" }];
 };
 
-export const loader = async () => {
-  const word = await loadWord();
-  const sample = await sampleWord();
-  return json(word);
+export const loader = async ({ request }: ActionArgs) => {
+  const session = await getSession(request.headers.get("Cookie"));
+  const words = session.data.words || [];
+  const index = session.data.index || 0;
+  session.set("index", index);
+
+  let word = null;
+  if (words.length && index < words.length - 1) {
+    word = words[index];
+  } else {
+    word = await loadWord();
+    words.push(word);
+    session.set("words", words);
+  }
+
+  return json(
+    { word, session },
+    {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    }
+  );
 };
 
 export const action = async ({ request }: ActionArgs) => {
   const form = await request.formData();
+  debugFormData(form);
   const wordId = Number(form.get("wordId"));
-  await logOccurrence(wordId);
-  return redirect("/");
-};
 
-const moveBack = () => {
-  console.log("moveback");
+  const session = await getSession(request.headers.get("Cookie"));
+  if (!session.has("userId")) {
+    session.set("userId", "1");
+  }
+  const index = session.get("index")!;
+
+  const intent = form.get("intent");
+  if (intent === "forward") {
+    session.set("index", index + 1);
+    await logOccurrence(wordId);
+  } else if (intent === "backward" && index > 0) {
+    // TODO: block button
+    session.set("index", index - 1);
+  }
+
+  return redirect("/", {
+    headers: {
+      "Set-Cookie": await commitSession(session),
+    },
+  });
 };
 
 export default function Index() {
-  const words = useState([]);
-  const index = useState(null);
-  const word = useLoaderData();
-
-  words.push(word);
+  const { word } = useLoaderData();
 
   return (
     <div
@@ -54,11 +86,29 @@ export default function Index() {
           justifyContent: "center",
         }}
       >
-        <ArrowBackIosNewIcon fontSize="large" onClick={moveBack} />
         <Flashcard word={word} />
         <form method="POST" action="/?index">
-          <input type="hidden" name="wordId" value={word.id} />
           <button
+            name="intent"
+            value="backward"
+            style={{
+              background: "none",
+              color: "inherit",
+              border: "none",
+              padding: 0,
+              font: "inherit",
+              cursor: "pointer",
+              outline: "inherit",
+            }}
+          >
+            <ArrowBackIosNewIcon fontSize="large" />
+          </button>
+
+          <input type="hidden" name="wordId" value={word.id} />
+
+          <button
+            name="intent"
+            value="forward"
             style={{
               background: "none",
               color: "inherit",
