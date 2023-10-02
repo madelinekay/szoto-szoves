@@ -54,7 +54,6 @@ export const action = async ({ request }: ActionArgs) => {
     session.set("index", index + 1);
     await logOccurrence(wordId);
   } else if (intent === "backward" && index > 0) {
-    // TODO: block button
     session.set("index", index - 1);
   }
 
@@ -67,6 +66,8 @@ export const action = async ({ request }: ActionArgs) => {
 
 export default function Index() {
   const { word } = useLoaderData();
+  const { session } = useLoaderData();
+  const index = session.data.index;
 
   return (
     <div
@@ -78,7 +79,9 @@ export default function Index() {
         marginTop: 150,
       }}
     >
-      <div
+      <form
+        method="POST"
+        action="/?index"
         style={{
           display: "flex",
           flexDirection: "row",
@@ -86,43 +89,41 @@ export default function Index() {
           justifyContent: "center",
         }}
       >
+        <button
+          name="intent"
+          value="backward"
+          style={{
+            background: "none",
+            color: "inherit",
+            border: "none",
+            padding: 0,
+            font: "inherit",
+            cursor: "pointer",
+            outline: "inherit",
+          }}
+          disabled={!index}
+        >
+          <ArrowBackIosNewIcon fontSize="large" />
+        </button>
         <Flashcard word={word} />
-        <form method="POST" action="/?index">
-          <button
-            name="intent"
-            value="backward"
-            style={{
-              background: "none",
-              color: "inherit",
-              border: "none",
-              padding: 0,
-              font: "inherit",
-              cursor: "pointer",
-              outline: "inherit",
-            }}
-          >
-            <ArrowBackIosNewIcon fontSize="large" />
-          </button>
+        <input type="hidden" name="wordId" value={word.id} />
 
-          <input type="hidden" name="wordId" value={word.id} />
-
-          <button
-            name="intent"
-            value="forward"
-            style={{
-              background: "none",
-              color: "inherit",
-              border: "none",
-              padding: 0,
-              font: "inherit",
-              cursor: "pointer",
-              outline: "inherit",
-            }}
-          >
-            <ArrowForwardIosIcon fontSize="large" />
-          </button>
-        </form>
-      </div>
+        <button
+          name="intent"
+          value="forward"
+          style={{
+            background: "none",
+            color: "inherit",
+            border: "none",
+            padding: 0,
+            font: "inherit",
+            cursor: "pointer",
+            outline: "inherit",
+          }}
+        >
+          <ArrowForwardIosIcon fontSize="large" />
+        </button>
+      </form>
     </div>
   );
 }
