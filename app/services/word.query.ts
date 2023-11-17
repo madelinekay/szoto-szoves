@@ -2,17 +2,15 @@ import { db } from "~/utils/db.server";
 
 export const sampleWordQuery = () => db.$queryRaw`
 with latest_roots as (
-    select r.id,
-    SUM(extract(
-      epoch 
-      from 
-        (
-          date_trunc('day', now() - la.last_seen)
-        )/ 86400
-    )):: int as root_score
-    from roots r 
-    left join connections c on r.id = c.root_id 
-    inner join latest_asks la on c.word_id = la.word_id
+    select
+    r.id,
+    coalesce(
+      SUM(extract(epoch from date_trunc('day', now() - la.last_seen) / 86400)),
+      (select extract(epoch from date_trunc('day', now() - last_seen) / 86400) from test_latest_asks order by last_seen asc)
+    ) :: int as root_score
+    from test_roots r
+    left join test_connections c on r.id = c.root_id 
+    left join test_latest_asks la on c.word_id = la.word_id
     group by r.id
   ),
   result as (
