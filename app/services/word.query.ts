@@ -2,16 +2,21 @@ import { db } from "~/utils/db.server";
 
 export const sampleWordQuery = () => db.$queryRaw`
 with latest_roots as (
-    select
+  SELECT
     r.id,
-    coalesce(
-      SUM(extract(epoch from date_trunc('day', now() - la.last_seen) / 86400)),
-      (select extract(epoch from date_trunc('day', now() - last_seen) / 86400) from test_latest_asks order by last_seen asc)
-    ) :: int as root_score
-    from test_roots r
-    left join test_connections c on r.id = c.root_id 
-    left join test_latest_asks la on c.word_id = la.word_id
-    group by r.id
+    SUM(
+        EXTRACT(epoch FROM date_trunc('day', NOW() - COALESCE(la.last_seen, (
+            SELECT min(last_seen) from test_latest_asks
+        ))) / 86400)
+    )/COUNT(c.root_id)::INT AS root_score 
+  FROM
+      test_roots r
+  LEFT JOIN
+      test_connections c ON r.id = c.root_id 
+  LEFT JOIN
+      test_latest_asks la ON c.word_id = la.word_id
+  GROUP BY
+      r.id;
   ),
   result as (
     select
