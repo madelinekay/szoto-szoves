@@ -1,20 +1,20 @@
 import { db } from "~/utils/db.server";
-
+// will unseen roots be calculated here? unnecessary work
 export const sampleWordQuery = () => db.$queryRaw`
 with latest_roots as (
   SELECT
     r.id,
     SUM(
         EXTRACT(epoch FROM date_trunc('day', NOW() - COALESCE(la.last_seen, (
-            SELECT min(last_seen) from test_latest_asks
+            SELECT min(last_seen) + INTERVAL '1 day' from latest_asks
         ))) / 86400)
     )/COUNT(c.root_id)::INT AS root_score 
   FROM
-      test_roots r
+      roots r
   LEFT JOIN
-      test_connections c ON r.id = c.root_id 
+      connections c ON r.id = c.root_id 
   LEFT JOIN
-      test_latest_asks la ON c.word_id = la.word_id
+      latest_asks la ON c.word_id = la.word_id
   GROUP BY
       r.id;
   ),
