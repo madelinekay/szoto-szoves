@@ -6,7 +6,7 @@ with latest_roots as (
     r.id,
     SUM(
         EXTRACT(epoch FROM date_trunc('day', NOW() - COALESCE(la.last_seen, (
-            SELECT min(last_seen) + INTERVAL '1 day' from latest_asks
+            SELECT min(last_seen) - INTERVAL '1 day' from latest_asks
         ))) / 86400)
     )/COUNT(c.root_id)::INT AS root_score 
   FROM
